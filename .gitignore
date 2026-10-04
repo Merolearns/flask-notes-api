@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# database
+*.db
+*.db-journal
+
+# pytest
+.pytest_cache/
+.coverage
+
+# editors / os
+.vscode/
+.DS_Store
