@@ -114,6 +114,31 @@ def test_tag_filter(client):
     assert data["notes"][0]["title"] == "A"
 
 
+def test_tag_filter_case_insensitive(client):
+    # tags are stored lowercase, so filtering should ignore case too
+    create(client, "A", tags=["Work"])
+    r = client.get("/notes?tag=Work")
+    data = r.get_json()
+    assert data["total"] == 1
+    assert data["notes"][0]["title"] == "A"
+    assert data["notes"][0]["tags"] == ["work"]
+
+
+def test_search_escapes_like_wildcards(client):
+    # % and _ in the query are literal, not LIKE wildcards
+    create(client, "Sale", "100% off everything")
+    create(client, "Stats", "1000 pageviews today")
+    r = client.get("/notes", query_string={"q": "100%"})
+    titles = [n["title"] for n in r.get_json()["notes"]]
+    assert titles == ["Sale"]
+
+    create(client, "a_b note", "body with a_b in it")
+    create(client, "axb note", "plain body")
+    r = client.get("/notes", query_string={"q": "a_b"})
+    titles = [n["title"] for n in r.get_json()["notes"]]
+    assert titles == ["a_b note"]
+
+
 def test_pagination(client):
     for i in range(5):
         create(client, f"Note {i}")

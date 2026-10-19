@@ -48,14 +48,19 @@ def list_notes(q=None, tag=None, page=1, per_page=20, path=None):
     clauses, params = [], []
 
     if tag:
+        # stored tags are normalized to lowercase (see _set_tags), so match
+        # the filter the same way — "?tag=Work" should find tag "work"
+        tag = tag.strip().lower()
         clauses.append(
             "n.id IN (SELECT note_id FROM note_tags nt JOIN tags t ON t.id = nt.tag_id WHERE t.name = ?)"
         )
         params.append(tag)
 
     if q:
-        clauses.append("(n.title LIKE ? OR n.body LIKE ?)")
-        like = f"%{q}%"
+        # escape LIKE wildcards so a query like "100%" matches literally,
+        # not everything starting with "100"
+        clauses.append(r"(n.title LIKE ? ESCAPE '\' OR n.body LIKE ? ESCAPE '\')")
+        like = f"%{_escape_like(q)}%"
         params += [like, like]
 
     where = "WHERE " + " AND ".join(clauses) if clauses else ""
@@ -131,6 +136,11 @@ def list_tags(path=None):
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def _escape_like(q):
+    """Escape LIKE wildcards (%, _) and the escape char itself."""
+    return q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 def _set_tags(conn, note_id, tags):
