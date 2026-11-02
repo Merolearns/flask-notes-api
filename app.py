@@ -96,7 +96,10 @@ def _validate_note(data, partial):
     """Returns an error string or None."""
     if not partial or "title" in data:
         title = data.get("title")
-        if not title or not str(title).strip():
+        if title is not None and not isinstance(title, str):
+            # used to slip through to len() and blow up with a 500
+            return "title must be a string"
+        if not title or not title.strip():
             return "title is required"
         if len(title) > TITLE_MAX:
             return f"title must be at most {TITLE_MAX} characters"

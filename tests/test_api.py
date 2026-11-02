@@ -95,6 +95,11 @@ def test_validation_errors(client):
     r = client.post("/notes", json={"title": "a" * 201})
     assert r.status_code == 400
 
+    # non-string title is a 400, not a 500
+    r = client.post("/notes", json={"title": 123})
+    assert r.status_code == 400
+    assert r.get_json()["error"] == "title must be a string"
+
 
 def test_search(client):
     create(client, "Python tricks", "generators are neat", ["study"])
