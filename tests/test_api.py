@@ -100,6 +100,14 @@ def test_validation_errors(client):
     assert r.status_code == 400
     assert r.get_json()["error"] == "title must be a string"
 
+    # non-string body is a 400, not a 500 (sqlite can't bind a dict/list)
+    r = client.post("/notes", json={"title": "x", "body": 123})
+    assert r.status_code == 400
+    assert r.get_json()["error"] == "body must be a string"
+    r = client.post("/notes", json={"title": "x", "body": {"a": 1}})
+    assert r.status_code == 400
+    assert r.get_json()["error"] == "body must be a string"
+
 
 def test_search(client):
     create(client, "Python tricks", "generators are neat", ["study"])

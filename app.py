@@ -104,7 +104,11 @@ def _validate_note(data, partial):
         if len(title) > TITLE_MAX:
             return f"title must be at most {TITLE_MAX} characters"
     if "body" in data and data["body"] is not None:
-        if len(str(data["body"])) > BODY_MAX:
+        if not isinstance(data["body"], str):
+            # same class of bug as the title one: a dict/list body slipped
+            # through to sqlite and blew up with a 500 on bind
+            return "body must be a string"
+        if len(data["body"]) > BODY_MAX:
             return f"body must be at most {BODY_MAX} characters"
     if "tags" in data:
         tags = data["tags"]
