@@ -13,6 +13,8 @@ DB_PATH = "notes.db"
 
 def get_db(path=DB_PATH):
     conn = sqlite3.connect(path)
+    # SQLite leaves foreign keys off per connection, which disables ON DELETE CASCADE
+    conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
 

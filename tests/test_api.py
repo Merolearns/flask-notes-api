@@ -5,8 +5,10 @@ import tempfile
 
 import pytest
 
+import db
 from db import init_db
 from app import app
+from notes import list_tags
 
 
 @pytest.fixture()
@@ -172,3 +174,24 @@ def test_tags_endpoint(client):
     r = client.get("/tags")
     tags = {t["name"]: t["count"] for t in r.get_json()["tags"]}
     assert tags == {"work": 2, "urgent": 1}
+
+
+def test_delete_note_removes_its_tags(client):
+    note = create(client, "A", tags=["work", "urgent"]).get_json()
+    assert client.delete(f"/notes/{note['id']}").status_code == 204
+
+    assert list_tags() == []
+    conn = db.get_db()
+    count = conn.execute(
+        "SELECT COUNT(*) FROM note_tags WHERE note_id = ?", (note["id"],)
+    ).fetchone()[0]
+    conn.close()
+    assert count == 0
+
+
+def test_delete_note_decrements_shared_tag_count(client):
+    note = create(client, "A", tags=["work"]).get_json()
+    create(client, "B", tags=["work"])
+    assert client.delete(f"/notes/{note['id']}").status_code == 204
+
+    assert list_tags() == [{"name": "work", "count": 1}]
