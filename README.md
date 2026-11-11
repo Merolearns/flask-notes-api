@@ -26,6 +26,16 @@ python app.py
 
 The API listens on http://127.0.0.1:5000.
 
+## Web UI
+
+There's a single plain page at `/` for poking at the API without curl: list, search, filter by tag, add and delete notes. It's one template with inline CSS and a little vanilla JS that calls the same JSON endpoints.
+
+```bash
+python app.py
+```
+
+Then open http://127.0.0.1:5000/.
+
 ## Try it
 
 ```bash

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; color: #222; background: #fafafa; }
+  h1 { margin: 0 0 1rem; }
+  form { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+  input, textarea, button { font: inherit; padding: .4rem .6rem; border: 1px solid #ccc; border-radius: 4px; }
+  input, textarea { flex: 1 1 10rem; background: #fff; }
+  textarea { flex-basis: 100%; min-height: 4rem; }
+  button { background: #2b5fab; color: #fff; border-color: #2b5fab; cursor: pointer; }
+  button.delete { background: none; color: #b33; border-color: #e3b8b8; font-size: .85rem; }
+  ul { list-style: none; padding: 0; }
+  li { background: #fff; border: 1px solid #e3e3e3; border-radius: 6px; padding: .75rem 1rem; margin-bottom: .5rem; }
+  li header { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+  li p { margin: .25rem 0; white-space: pre-wrap; }
+  .tag { display: inline-block; background: #eef2f8; color: #2b5fab; border-radius: 3px; padding: 0 .4rem; margin-right: .25rem; font-size: .8rem; }
+  #status { color: #b33; min-height: 1.5em; }
+</style>
+</head>
+<body>
+<h1>Notes</h1>
+
+<form id="filters">
+  <input id="q" name="q" type="search" placeholder="Search" aria-label="Search notes">
+  <input id="tag" name="tag" placeholder="Filter by tag" aria-label="Filter by tag">
+  <button type="submit">Apply</button>
+</form>
+
+<form id="add">
+  <input id="title" name="title" placeholder="Title" aria-label="Title" required maxlength="200">
+  <input id="tags" name="tags" placeholder="Tags, comma separated" aria-label="Tags">
+  <textarea id="body" name="body" placeholder="Body" aria-label="Body" maxlength="10000"></textarea>
+  <button type="submit">Add note</button>
+</form>
+
+<div id="status" role="status"></div>
+<ul id="notes"></ul>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+async function api(url, options) {
+  const r = await fetch(url, options);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+  return r.status === 204 ? null : r.json();
+}
+
+async function loadNotes() {
+  const params = new URLSearchParams();
+  if ($("q").value.trim()) params.set("q", $("q").value.trim());
+  if ($("tag").value.trim()) params.set("tag", $("tag").value.trim());
+  try {
+    const data = await api("/notes?" + params);
+    render(data.notes);
+    $("status").textContent = "";
+  } catch (e) {
+    $("status").textContent = e.message;
+  }
+}
+
+function render(notes) {
+  const list = $("notes");
+  list.replaceChildren();
+  if (!notes.length) {
+    list.innerHTML = "<li>No notes yet.</li>";
+    return;
+  }
+  for (const n of notes) {
+    // build with textContent so note text is never parsed as HTML
+    const li = document.createElement("li");
+    const head = document.createElement("header");
+    const title = document.createElement("strong");
+    title.textContent = n.title;
+    const del = document.createElement("button");
+    del.className = "delete";
+    del.textContent = "Delete";
+    del.onclick = () => deleteNote(n.id);
+    head.append(title, del);
+    const body = document.createElement("p");
+    body.textContent = n.body;
+    const tags = document.createElement("div");
+    for (const t of n.tags) {
+      const span = document.createElement("span");
+      span.className = "tag";
+      span.textContent = t;
+      tags.append(span);
+    }
+    li.append(head, body, tags);
+    list.append(li);
+  }
+}
+
+async function deleteNote(id) {
+  try {
+    await api("/notes/" + id, { method: "DELETE" });
+    loadNotes();
+  } catch (e) {
+    $("status").textContent = e.message;
+  }
+}
+
+$("filters").onsubmit = (e) => { e.preventDefault(); loadNotes(); };
+
+$("add").onsubmit = async (e) => {
+  e.preventDefault();
+  const tags = $("tags").value.split(",").map((t) => t.trim()).filter(Boolean);
+  try {
+    await api("/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: $("title").value, body: $("body").value, tags }),
+    });
+    e.target.reset();
+    loadNotes();
+  } catch (err) {
+    $("status").textContent = err.message;
+  }
+};
+
+loadNotes();
+</script>
+</body>
+</html>

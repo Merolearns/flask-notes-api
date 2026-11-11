@@ -1,6 +1,6 @@
 """Flask routes for the notes API."""
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 
 from db import DB_PATH, init_db
 from notes import (
@@ -30,6 +30,12 @@ def handle_not_found(e):
 def handle_bad_request(e):
     # generic fallback, most validation returns its own message below
     return jsonify({"error": "bad request"}), 400
+
+
+@app.route("/", methods=["GET"])
+def index():
+    # the page is static; it talks to the JSON API below with fetch()
+    return render_template("index.html")
 
 
 @app.route("/notes", methods=["POST"])
