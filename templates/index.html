@@ -18,6 +18,7 @@
   li header { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
   li p { margin: .25rem 0; white-space: pre-wrap; }
   .tag { display: inline-block; background: #eef2f8; color: #2b5fab; border-radius: 3px; padding: 0 .4rem; margin-right: .25rem; font-size: .8rem; }
+  #count { color: #666; font-size: .9rem; }
   #status { color: #b33; min-height: 1.5em; }
 </style>
 </head>
@@ -39,9 +40,15 @@
 
 <div id="status" role="status"></div>
 <ul id="notes"></ul>
+<p id="count"></p>
+<button id="load-more" type="button" hidden>Load more</button>
 
 <script>
 const $ = (id) => document.getElementById(id);
+
+// paging state for the Load more button below
+let page = 1;
+let shown = 0;
 
 async function api(url, options) {
   const r = await fetch(url, options);
@@ -49,23 +56,30 @@ async function api(url, options) {
   return r.status === 204 ? null : r.json();
 }
 
-async function loadNotes() {
+async function loadNotes(reset = true) {
+  // the list only ever showed the first 20 notes — page through the API
+  // instead so older notes are reachable without touching the URL
+  if (reset) { page = 1; shown = 0; $("notes").replaceChildren(); }
   const params = new URLSearchParams();
   if ($("q").value.trim()) params.set("q", $("q").value.trim());
   if ($("tag").value.trim()) params.set("tag", $("tag").value.trim());
+  params.set("page", page);
   try {
     const data = await api("/notes?" + params);
-    render(data.notes);
+    render(data.notes, !reset);
+    shown += data.notes.length;
+    $("count").textContent = data.total ? `Showing ${shown} of ${data.total} notes` : "";
+    $("load-more").hidden = shown >= data.total;
     $("status").textContent = "";
   } catch (e) {
     $("status").textContent = e.message;
   }
 }
 
-function render(notes) {
+function render(notes, append) {
   const list = $("notes");
-  list.replaceChildren();
-  if (!notes.length) {
+  if (!append) list.replaceChildren();
+  if (!notes.length && !append) {
     list.innerHTML = "<li>No notes yet.</li>";
     return;
   }
@@ -104,6 +118,8 @@ async function deleteNote(id) {
 }
 
 $("filters").onsubmit = (e) => { e.preventDefault(); loadNotes(); };
+
+$("load-more").onclick = () => { page += 1; loadNotes(false); };
 
 $("add").onsubmit = async (e) => {
   e.preventDefault();
