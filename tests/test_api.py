@@ -139,6 +139,17 @@ def test_tag_filter_case_insensitive(client):
     assert data["notes"][0]["tags"] == ["work"]
 
 
+def test_blank_search_and_tag_are_no_filter(client):
+    # a whitespace-only filter is the same as no filter at all — it used
+    # to match everything for q and nothing for tag
+    create(client, "A", tags=["work"])
+    create(client, "B", tags=["personal"])
+    r = client.get("/notes", query_string={"q": "   "})
+    assert r.get_json()["total"] == 2
+    r = client.get("/notes", query_string={"tag": "   "})
+    assert r.get_json()["total"] == 2
+
+
 def test_search_escapes_like_wildcards(client):
     # % and _ in the query are literal, not LIKE wildcards
     create(client, "Sale", "100% off everything")

@@ -47,10 +47,17 @@ def list_notes(q=None, tag=None, page=1, per_page=20, path=None):
     conn = get_db(path) if path else get_db()
     clauses, params = [], []
 
+    # a blank filter ("?q=%20%20") means no filter — without this, a
+    # whitespace-only q matched everything (LIKE '%%') while a
+    # whitespace-only tag matched nothing, both surprising
+    if isinstance(q, str):
+        q = q.strip() or None
+    if isinstance(tag, str):
+        tag = tag.strip().lower() or None
+
     if tag:
         # stored tags are normalized to lowercase (see _set_tags), so match
         # the filter the same way — "?tag=Work" should find tag "work"
-        tag = tag.strip().lower()
         clauses.append(
             "n.id IN (SELECT note_id FROM note_tags nt JOIN tags t ON t.id = nt.tag_id WHERE t.name = ?)"
         )
