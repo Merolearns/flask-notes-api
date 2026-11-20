@@ -206,3 +206,31 @@ def test_delete_note_decrements_shared_tag_count(client):
     assert client.delete(f"/notes/{note['id']}").status_code == 204
 
     assert list_tags() == [{"name": "work", "count": 1}]
+
+
+def _tag_names():
+    # raw tags table, not list_tags() — that joins on note_tags and would
+    # hide orphaned tags either way
+    conn = db.get_db()
+    names = [r[0] for r in conn.execute("SELECT name FROM tags ORDER BY name")]
+    conn.close()
+    return names
+
+
+def test_delete_note_removes_orphan_tags(client):
+    note_a = create(client, "A", tags=["work", "urgent"]).get_json()
+    create(client, "B", tags=["work"])
+    assert client.delete(f"/notes/{note_a['id']}").status_code == 204
+
+    # "urgent" belonged only to A, so it's gone from the tags table;
+    # "work" is still used by B
+    assert _tag_names() == ["work"]
+
+
+def test_replacing_tags_removes_orphan_tags(client):
+    note = create(client, "A", tags=["old"]).get_json()
+    r = client.put(f"/notes/{note['id']}", json={"tags": ["new"]})
+    assert r.status_code == 200
+    assert r.get_json()["tags"] == ["new"]
+
+    assert _tag_names() == ["new"]

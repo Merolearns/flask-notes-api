@@ -112,6 +112,7 @@ def update_note(note_id, title=None, body=None, tags=None, path=None):
     if tags is not None:
         conn.execute("DELETE FROM note_tags WHERE note_id = ?", (note_id,))
         _set_tags(conn, note_id, tags)
+        _delete_orphan_tags(conn)
         conn.execute("UPDATE notes SET updated_at = ? WHERE id = ?", (now(), note_id))
 
     conn.commit()
@@ -123,6 +124,7 @@ def update_note(note_id, title=None, body=None, tags=None, path=None):
 def delete_note(note_id, path=None):
     conn = get_db(path) if path else get_db()
     cur = conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+    _delete_orphan_tags(conn)
     conn.commit()
     conn.close()
     if cur.rowcount == 0:
@@ -148,6 +150,13 @@ def list_tags(path=None):
 def _escape_like(q):
     """Escape LIKE wildcards (%, _) and the escape char itself."""
     return q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _delete_orphan_tags(conn):
+    # deleting a note cascades its note_tags rows, but the tag itself stays
+    # in the tags table — without this, tags with no notes pile up forever
+    # (list_tags() joins on note_tags, so it never shows them)
+    conn.execute("DELETE FROM tags WHERE id NOT IN (SELECT tag_id FROM note_tags)")
 
 
 def _set_tags(conn, note_id, tags):
