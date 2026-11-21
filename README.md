@@ -28,13 +28,28 @@ The API listens on http://127.0.0.1:5000.
 
 ## Web UI
 
-There's a single plain page at `/` for poking at the API without curl: list, search, filter by tag, add and delete notes. It's one template with inline CSS and a little vanilla JS that calls the same JSON endpoints.
+There's a designed web UI at `/` for using the notes app without curl: a
+sidebar with search and a clickable tag list (with counts), a composer card
+for new notes, and the notes themselves as a card grid — each card shows the
+title, last-updated date, body, and tag chips, with inline editing (click
+Edit, change the note, Save) and delete with confirmation. Long bodies are
+clamped to a few lines with a Show more toggle, and older notes are reachable
+through a Load more button that pages through the API. Clicking a tag chip
+filters the grid to that tag. It talks to the same JSON endpoints above, so
+anything you do in the UI is visible through the API and vice versa.
 
 ```bash
 python app.py
 ```
 
 Then open http://127.0.0.1:5000/.
+
+With the five sample notes from `seed.py`, the first thing you see is the
+sidebar listing the tags — personal (2), todo (2), study (2), reading (1),
+sql (1), projects (1), career (1) — and a grid of five cards, newest first
+("Interview prep notes" at the top). Searching "sql" narrows it to the one
+note about window functions; clicking the `study` tag shows the two study
+notes.
 
 ## Try it
 
@@ -75,4 +90,3 @@ The suite covers the full CRUD cycle, search, tag filtering, pagination, 404s, a
 - A due-date field and `?due=` filter — the obvious missing feature for a notes app
 - Sorting options beyond updated-at (the listing is hardcoded right now)
 - Basic auth or an API key, since anyone can currently write to the database
-- A tiny frontend — probably just server-rendered templates rather than a full SPA
