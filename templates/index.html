@@ -21,6 +21,12 @@
         <form id="filters">
           <input id="q" name="q" type="search" placeholder="Search notes" aria-label="Search notes">
           <input id="tag" name="tag" type="hidden">
+          <label class="field" for="sort">Sort by</label>
+          <select id="sort" name="sort" aria-label="Sort notes">
+            <option value="updated" selected>Recently updated</option>
+            <option value="created">Recently created</option>
+            <option value="title">Title A–Z</option>
+          </select>
         </form>
       </div>
 

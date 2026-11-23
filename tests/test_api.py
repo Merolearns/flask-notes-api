@@ -179,6 +179,26 @@ def test_pagination(client):
     assert client.get("/notes?per_page=500").status_code == 400
 
 
+def test_sorting(client):
+    create(client, "Banana")
+    create(client, "Apple")
+    create(client, "Cherry")
+
+    titles = lambda sort: [
+        n["title"] for n in client.get(f"/notes?sort={sort}").get_json()["notes"]
+    ]
+    assert titles("title") == ["Apple", "Banana", "Cherry"]
+    assert titles("created") == ["Cherry", "Apple", "Banana"]  # newest first
+    assert titles("updated") == ["Cherry", "Apple", "Banana"]  # default order
+    assert titles("updated") == [
+        n["title"] for n in client.get("/notes").get_json()["notes"]
+    ]
+
+    r = client.get("/notes?sort=nope")
+    assert r.status_code == 400
+    assert "sort must be one of" in r.get_json()["error"]
+
+
 def test_tags_endpoint(client):
     create(client, "A", tags=["work", "urgent"])
     create(client, "B", tags=["work"])

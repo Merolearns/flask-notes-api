@@ -57,6 +57,10 @@ notes.
 # list notes (paginated)
 curl http://127.0.0.1:5000/notes
 
+# sort by title, or by creation date instead of last-updated (the default)
+curl "http://127.0.0.1:5000/notes?sort=title"
+curl "http://127.0.0.1:5000/notes?sort=created"
+
 # search + filter
 curl "http://127.0.0.1:5000/notes?q=sql&tag=study"
 
@@ -83,10 +87,9 @@ curl http://127.0.0.1:5000/tags
 pytest
 ```
 
-The suite covers the full CRUD cycle, search, tag filtering, pagination, 404s, and validation errors, all against throwaway temp databases.
+The suite covers the full CRUD cycle, search, tag filtering, sorting, pagination, 404s, and validation errors, all against throwaway temp databases.
 
 ## What I'd add next
 
 - A due-date field and `?due=` filter — the obvious missing feature for a notes app
-- Sorting options beyond updated-at (the listing is hardcoded right now)
 - Basic auth or an API key, since anyone can currently write to the database

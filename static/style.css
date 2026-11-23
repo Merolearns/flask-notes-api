@@ -59,7 +59,7 @@ header.top h1 { font-size: 2rem; margin: 0 0 6px; letter-spacing: -0.02em; }
 /* ---------- forms ---------- */
 
 label.field { display: block; font-size: 0.85rem; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
-input, textarea {
+input, textarea, select {
   font: inherit;
   width: 100%;
   padding: 10px 12px;
@@ -68,7 +68,7 @@ input, textarea {
   background: #fff;
   color: var(--ink);
 }
-input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 textarea { min-height: 5rem; resize: vertical; }
 
 .btn {

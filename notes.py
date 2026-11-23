@@ -11,6 +11,15 @@ class NotFoundError(Exception):
     pass
 
 
+# sort orders for list_notes — whitelisted so only these ORDER BY
+# fragments ever reach the query
+SORTS = {
+    "updated": "n.updated_at DESC, n.id DESC",
+    "created": "n.created_at DESC, n.id DESC",
+    "title": "n.title COLLATE NOCASE ASC, n.id ASC",
+}
+
+
 def create_note(title, body="", tags=None, path=None):
     """Insert a note and its tags. Returns the note dict with id."""
     tags = tags or []
@@ -42,7 +51,7 @@ def get_note(note_id, path=None, _conn=None):
     return note
 
 
-def list_notes(q=None, tag=None, page=1, per_page=20, path=None):
+def list_notes(q=None, tag=None, page=1, per_page=20, path=None, sort="updated"):
     """Paginated note list with optional search and tag filter."""
     conn = get_db(path) if path else get_db()
     clauses, params = [], []
@@ -73,9 +82,12 @@ def list_notes(q=None, tag=None, page=1, per_page=20, path=None):
     where = "WHERE " + " AND ".join(clauses) if clauses else ""
     total = conn.execute(f"SELECT COUNT(*) FROM notes n {where}", params).fetchone()[0]
 
+    # sort comes from a whitelist, never raw user input — the id
+    # tiebreaker keeps the order stable when two notes share a timestamp
+    order = SORTS.get(sort, SORTS["updated"])
     offset = (page - 1) * per_page
     rows = conn.execute(
-        f"SELECT n.* FROM notes n {where} ORDER BY n.updated_at DESC LIMIT ? OFFSET ?",
+        f"SELECT n.* FROM notes n {where} ORDER BY {order} LIMIT ? OFFSET ?",
         params + [per_page, offset],
     ).fetchall()
 

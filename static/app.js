@@ -27,6 +27,7 @@ async function loadNotes(reset = true) {
   const params = new URLSearchParams();
   if ($("q").value.trim()) params.set("q", $("q").value.trim());
   if (activeTag) params.set("tag", activeTag);
+  params.set("sort", $("sort").value);
   params.set("page", page);
   try {
     const data = await api("/notes?" + params);
@@ -230,6 +231,8 @@ async function deleteNote(id) {
 }
 
 $("filters").onsubmit = (e) => { e.preventDefault(); loadNotes(); };
+
+$("sort").onchange = () => loadNotes();
 
 $("clear-filter").onclick = () => {
   activeTag = "";

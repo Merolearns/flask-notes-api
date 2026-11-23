@@ -58,11 +58,16 @@ def get_notes():
     if page < 1 or per_page < 1 or per_page > PER_PAGE_MAX:
         return jsonify({"error": f"page >= 1 and 1 <= per_page <= {PER_PAGE_MAX}"}), 400
 
+    sort = request.args.get("sort", "updated")
+    if sort not in ("updated", "created", "title"):
+        return jsonify({"error": "sort must be one of: updated, created, title"}), 400
+
     result = list_notes(
         q=request.args.get("q"),
         tag=request.args.get("tag"),
         page=page,
         per_page=per_page,
+        sort=sort,
     )
     return jsonify(result)
 

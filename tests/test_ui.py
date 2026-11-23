@@ -11,7 +11,7 @@ def test_index_renders(client):
 
 def test_index_has_form_fields(client):
     html = client.get("/").get_data(as_text=True)
-    for field in ('id="q"', 'id="tag"', 'id="title"', 'id="body"', 'id="tags"'):
+    for field in ('id="q"', 'id="tag"', 'id="sort"', 'id="title"', 'id="body"', 'id="tags"'):
         assert field in html
 
 
