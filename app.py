@@ -44,7 +44,13 @@ def post_note():
     err = _validate_note(data, partial=False)
     if err:
         return jsonify({"error": err}), 400
-    note = create_note(data["title"].strip(), data.get("body", ""), data.get("tags", []))
+    note = create_note(
+        data["title"].strip(),
+        # .get("body", "") isn't enough: an explicit JSON null comes back
+        # as None, not the default, and sqlite rejects NULL for body
+        data.get("body") or "",
+        data.get("tags", []),
+    )
     return jsonify(note), 201
 
 

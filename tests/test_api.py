@@ -111,6 +111,14 @@ def test_validation_errors(client):
     assert r.get_json()["error"] == "body must be a string"
 
 
+def test_null_body_is_treated_as_empty(client):
+    # an explicit JSON null used to reach sqlite as None and blow up on
+    # the NOT NULL constraint — a null body is just no body
+    r = client.post("/notes", json={"title": "x", "body": None})
+    assert r.status_code == 201
+    assert r.get_json()["body"] == ""
+
+
 def test_search(client):
     create(client, "Python tricks", "generators are neat", ["study"])
     create(client, "Grocery list", "milk", ["personal"])
